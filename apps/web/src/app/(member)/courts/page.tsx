@@ -24,7 +24,7 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader title={t("courts.title")} description={t("courts.description")} />
-      <form className="mb-5 grid grid-cols-[1fr_1fr_auto] gap-2 rounded-xl border border-border/80 bg-card/70 p-2 shadow-sm backdrop-blur">
+      <form className="mb-5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 rounded-xl border border-border/80 bg-card/70 p-2 shadow-sm backdrop-blur">
         <Input type="date" name="date" defaultValue={date} aria-label={t("courts.date")} />
         <Select name="venue" defaultValue={sp.venue ?? ""} aria-label={t("courts.venue")}>
           <option value="">{t("courts.allVenues")}</option>
@@ -59,8 +59,8 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
                 <VenueActions venue={v} className="mt-3" />
               </div>
 
-              <div className="grid gap-4 p-4">
-                <VenueAbout venue={v} />
+              <div className="grid min-w-0 grid-cols-1 gap-4 p-4">
+                <VenueAbout venue={v} collapsed />
 
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">

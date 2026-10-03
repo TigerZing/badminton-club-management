@@ -1,4 +1,4 @@
-import { CalendarCheck, ExternalLink, Globe, MapPinned, Phone } from "lucide-react";
+import { CalendarCheck, ChevronDown, ExternalLink, Globe, Info, MapPinned, Phone } from "lucide-react";
 import type { Venue } from "@club/db";
 import { getT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
@@ -44,22 +44,36 @@ export async function VenueActions({ venue, className }: { venue: VenueDetails; 
   );
 }
 
-/** The venue description and how-to-book steps. */
-export async function VenueAbout({ venue }: { venue: VenueDetails }) {
+/** The venue description and how-to-book steps. Collapsed, each shows one line and opens on tap. */
+export async function VenueAbout({ venue, collapsed }: { venue: VenueDetails; collapsed?: boolean }) {
   const { t } = await getT();
   if (!venue.description && !venue.bookingInfo) return null;
+  const sections = [
+    venue.description && { key: "about", icon: Info, title: t("courts.about"), text: venue.description, accent: false },
+    venue.bookingInfo && { key: "book", icon: CalendarCheck, title: t("courts.howToBook"), text: venue.bookingInfo, accent: true },
+  ].filter((x) => !!x);
+
   return (
-    <div className="grid gap-3 text-sm">
-      {venue.description && <p className="leading-relaxed whitespace-pre-line text-foreground/85">{venue.description}</p>}
-      {venue.bookingInfo && (
-        <div className="rounded-lg border-l-[3px] border-accent bg-accent/10 py-2.5 pr-3 pl-3 dark:bg-accent/[0.07]">
-          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-foreground uppercase">
-            <CalendarCheck className="size-3.5 text-primary" aria-hidden />
-            {t("courts.howToBook")}
-          </p>
-          <p className="leading-relaxed whitespace-pre-line text-muted-foreground">{venue.bookingInfo}</p>
-        </div>
-      )}
+    <div className="grid min-w-0 gap-2 text-sm">
+      {sections.map(({ key, icon: Icon, title, text, accent }) => (
+        <details
+          key={key}
+          open={!collapsed}
+          className={cn(
+            "group min-w-0 rounded-lg border transition-colors [interpolate-size:allow-keywords]",
+            "details-content:h-0 details-content:overflow-hidden details-content:transition-all details-content:duration-300 open:details-content:h-auto",
+            accent ? "border-accent/40 bg-accent/10 dark:bg-accent/[0.07]" : "border-border bg-muted/40",
+          )}
+        >
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 select-none [&::-webkit-details-marker]:hidden">
+            <Icon className="size-4 shrink-0 text-primary" aria-hidden />
+            <span className="shrink-0 font-semibold">{title}</span>
+            <span className="min-w-0 flex-1 truncate text-muted-foreground group-open:invisible">{text.split("\n")[0]}</span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" aria-hidden />
+          </summary>
+          <p className="px-3 pb-3 leading-relaxed whitespace-pre-line text-muted-foreground">{text}</p>
+        </details>
+      ))}
     </div>
   );
 }

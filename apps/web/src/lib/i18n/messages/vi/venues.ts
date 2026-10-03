@@ -60,6 +60,7 @@ export const adminVenues: typeof enAdminVenues = {
 };
 
 export const courts: typeof enCourts = {
+  about: "Giới thiệu",
   map: "Bản đồ",
   freeSlots: "Khung giờ trống",
   title: "Sân trống",

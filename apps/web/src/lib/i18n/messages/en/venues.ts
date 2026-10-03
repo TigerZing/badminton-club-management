@@ -59,6 +59,7 @@ export const adminVenues = {
 };
 
 export const courts = {
+  about: "About",
   map: "Map",
   freeSlots: "Free slots",
   title: "Court availability",
