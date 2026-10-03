@@ -24,10 +24,10 @@ export default async function AdminEventsPage() {
         }
       />
       {events.length === 0 && <EmptyState>{t("adminEvents.noEvents")}</EmptyState>}
-      <div className="grid gap-2">
+      <div className="stagger grid gap-2">
         {events.map((e) => (
           <Link key={e.id} href={`/admin/events/${e.id}`}>
-            <Card className="flex items-center justify-between gap-2 hover:bg-muted/50">
+            <Card interactive className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate font-medium">{e.title}</p>
                 <p className="text-sm text-muted-foreground">

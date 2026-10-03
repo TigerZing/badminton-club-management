@@ -23,10 +23,10 @@ export default async function VenuesPage() {
         }
       />
       {venues.length === 0 && <EmptyState>{t("adminVenues.empty")}</EmptyState>}
-      <div className="grid gap-2">
+      <div className="stagger grid gap-2">
         {venues.map((v) => (
           <Link key={v.id} href={`/admin/venues/${v.id}`}>
-            <Card className="flex items-center justify-between gap-2 hover:bg-muted/50">
+            <Card interactive className="flex items-center justify-between gap-2">
               <div>
                 <p className="font-medium">{v.name}</p>
                 <p className="text-sm text-muted-foreground">{t("adminVenues.courtCount", { count: v._count.courts })}</p>

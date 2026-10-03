@@ -52,7 +52,7 @@ export default async function AdminHome() {
         {events.length === 0 && <EmptyState>{t("adminOverview.noUpcoming")}</EmptyState>}
         {events.map((e) => (
           <Link key={e.id} href={`/admin/events/${e.id}`}>
-            <Card className="flex items-center justify-between gap-2 hover:bg-muted/50">
+            <Card interactive className="flex items-center justify-between gap-2">
               <div>
                 <p className="font-medium">{e.title}</p>
                 <p className="text-sm text-muted-foreground">
@@ -72,7 +72,7 @@ export default async function AdminHome() {
           const run = v.crawlRuns[0];
           return (
             <Link key={v.id} href={`/admin/venues/${v.id}`}>
-              <Card className="flex items-center justify-between gap-2 hover:bg-muted/50">
+              <Card interactive className="flex items-center justify-between gap-2">
                 <span className="font-medium">{v.name}</span>
                 {v.crawlerKey ? (
                   run ? (

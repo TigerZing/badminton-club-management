@@ -30,7 +30,7 @@ export default async function MePage() {
           </div>
         </Card>
         <Link href="/me/history">
-          <Card className="flex items-center gap-2 font-medium hover:bg-muted/50">
+          <Card interactive className="flex items-center gap-2 font-medium">
             <History className="size-4" /> {t("me.matchHistory")}
           </Card>
         </Link>

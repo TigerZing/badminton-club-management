@@ -59,6 +59,8 @@ export const adminVenues = {
 };
 
 export const courts = {
+  map: "Map",
+  freeSlots: "Free slots",
   title: "Court availability",
   description: "Free courts from venue booking sites and admin updates.",
   allVenues: "All venues",

@@ -1,8 +1,8 @@
-import { ExternalLink } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
-import { VenueInfo } from "@/components/venue-info";
+import { VenueAbout, VenueActions } from "@/components/venue-info";
 import { getT } from "@/lib/i18n/server";
 import { clubToday, formatDateTime, formatTimeRange } from "@/lib/time";
 import { getAvailability, listVenues } from "@/server/services/venues";
@@ -24,7 +24,7 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader title={t("courts.title")} description={t("courts.description")} />
-      <form className="mb-4 grid grid-cols-[1fr_1fr_auto] gap-2">
+      <form className="mb-5 grid grid-cols-[1fr_1fr_auto] gap-2 rounded-xl border border-border/80 bg-card/70 p-2 shadow-sm backdrop-blur">
         <Input type="date" name="date" defaultValue={date} aria-label={t("courts.date")} />
         <Select name="venue" defaultValue={sp.venue ?? ""} aria-label={t("courts.venue")}>
           <option value="">{t("courts.allVenues")}</option>
@@ -40,58 +40,59 @@ export default async function CourtsPage({ searchParams }: { searchParams: Promi
       </form>
 
       {availability.length === 0 && <EmptyState>{t("courts.noVenues")}</EmptyState>}
-      <div className="grid gap-3">
+      <div className="stagger grid gap-4">
         {availability.map((v) => {
           const byCourt = new Map<string, typeof v.slots>();
           for (const s of v.slots) byCourt.set(s.courtLabel, [...(byCourt.get(s.courtLabel) ?? []), s]);
           return (
-            <Card key={v.id}>
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <div>
-                  <CardTitle>{v.name}</CardTitle>
-                  {v.address && <p className="text-sm text-muted-foreground">{v.address}</p>}
-                </div>
-                {v.bookingUrl && (
-                  <a
-                    href={v.bookingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary"
-                  >
-                    {t("courts.book")} <ExternalLink className="size-3.5" />
-                  </a>
-                )}
-              </div>
-              {v.slots.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("courts.noSlots")}</p>
-              ) : (
-                <div className="grid gap-2">
-                  {[...byCourt.entries()].map(([court, slots]) => (
-                    <div key={court}>
-                      <p className="text-xs font-medium text-muted-foreground">{court}</p>
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        {slots.map((s) => (
-                          <span key={s.id} className="rounded-md bg-success/10 px-2 py-1 text-xs font-medium text-success">
-                            {formatTimeRange(s.startsAt, s.endsAt)}
-                            {s.price ? ` · ${s.price.toLocaleString("vi-VN")}₫` : ""}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {(v.phone || v.website || v.description || v.bookingInfo) && (
-                <details className="mt-3 rounded-lg border border-border px-3 py-2">
-                  <summary className="cursor-pointer text-sm font-medium">{t("courts.aboutVenue")}</summary>
-                  <div className="mt-2">
-                    <VenueInfo venue={v} labels={{ phone: t("courts.call"), website: t("courts.website"), howToBook: t("courts.howToBook") }} />
+            <Card key={v.id} className="overflow-hidden p-0">
+              <div className="relative bg-gradient-to-br from-primary/15 via-primary/5 to-accent/15 px-4 pt-4 pb-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-primary shadow-sm">
+                    <MapPin className="size-5" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <CardTitle className="text-base">{v.name}</CardTitle>
+                    {v.address && <p className="mt-0.5 text-sm text-muted-foreground">{v.address}</p>}
                   </div>
-                </details>
-              )}
-              <p className="mt-3 text-xs text-muted-foreground">
-                {v.lastUpdated ? t("courts.updated", { date: formatDateTime(v.lastUpdated, locale) }) : t("courts.notUpdated")}
-              </p>
+                </div>
+                <VenueActions venue={v} className="mt-3" />
+              </div>
+
+              <div className="grid gap-4 p-4">
+                <VenueAbout venue={v} />
+
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    <Clock className="size-3.5" aria-hidden />
+                    {t("courts.freeSlots")}
+                  </p>
+                  {v.slots.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("courts.noSlots")}</p>
+                  ) : (
+                    <div className="grid gap-2">
+                      {[...byCourt.entries()].map(([court, slots]) => (
+                        <div key={court} className="flex flex-wrap items-center gap-1.5">
+                          <span className="mr-1 w-16 shrink-0 text-xs font-medium text-muted-foreground">{court}</span>
+                          {slots.map((s) => (
+                            <span
+                              key={s.id}
+                              className="rounded-full bg-success/12 px-2.5 py-1 text-xs font-semibold text-success ring-1 ring-success/20 ring-inset"
+                            >
+                              {formatTimeRange(s.startsAt, s.endsAt)}
+                              {s.price ? ` · ${s.price.toLocaleString("vi-VN")}₫` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground/80">
+                  {v.lastUpdated ? t("courts.updated", { date: formatDateTime(v.lastUpdated, locale) }) : t("courts.notUpdated")}
+                </p>
+              </div>
             </Card>
           );
         })}

@@ -2,24 +2,51 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Light theme: fresh court green with a shuttlecock-yellow accent. */
 :root {
-  --background: oklch(0.985 0.002 145);
-  --foreground: oklch(0.2 0.02 150);
+  --background: oklch(0.982 0.006 160);
+  --foreground: oklch(0.22 0.025 165);
   --card: oklch(1 0 0);
-  --muted: oklch(0.955 0.006 150);
-  --muted-foreground: oklch(0.5 0.02 150);
-  --primary: oklch(0.52 0.13 152);
+  --muted: oklch(0.955 0.01 160);
+  --muted-foreground: oklch(0.5 0.025 165);
+  --primary: oklch(0.56 0.14 162);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.94 0.02 150);
-  --secondary-foreground: oklch(0.25 0.03 150);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.9 0.01 150);
-  --ring: oklch(0.52 0.13 152);
-  --success: oklch(0.55 0.14 150);
-  --warning: oklch(0.7 0.15 75);
+  --secondary: oklch(0.94 0.03 162);
+  --secondary-foreground: oklch(0.3 0.06 165);
+  --accent: oklch(0.88 0.16 105);
+  --accent-foreground: oklch(0.3 0.06 110);
+  --destructive: oklch(0.6 0.21 27);
+  --border: oklch(0.91 0.012 160);
+  --ring: oklch(0.56 0.14 162);
+  --success: oklch(0.58 0.14 155);
+  --warning: oklch(0.75 0.15 75);
+  --glow: oklch(0.56 0.14 162 / 0.14);
+  color-scheme: light;
+}
+
+.dark {
+  --background: oklch(0.17 0.015 175);
+  --foreground: oklch(0.94 0.01 160);
+  --card: oklch(0.215 0.018 172);
+  --muted: oklch(0.26 0.018 172);
+  --muted-foreground: oklch(0.7 0.02 165);
+  --primary: oklch(0.72 0.15 160);
+  --primary-foreground: oklch(0.18 0.03 165);
+  --secondary: oklch(0.29 0.04 165);
+  --secondary-foreground: oklch(0.9 0.04 160);
+  --accent: oklch(0.86 0.16 105);
+  --accent-foreground: oklch(0.22 0.05 110);
+  --destructive: oklch(0.68 0.19 25);
+  --border: oklch(0.31 0.02 172);
+  --ring: oklch(0.72 0.15 160);
+  --success: oklch(0.74 0.15 155);
+  --warning: oklch(0.8 0.14 80);
+  --glow: oklch(0.72 0.15 160 / 0.12);
+  color-scheme: dark;
 }
 
 @theme inline {
+  --font-sans: var(--font-app), ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -29,16 +56,85 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-ring: var(--ring);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --radius-lg: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+
+  --animate-page: page-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-rise: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@keyframes shimmer {
+  50% {
+    opacity: 0.55;
+  }
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(60rem 28rem at 50% -12rem, var(--glow), transparent 70%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Theme switches fade instead of flashing. */
+html.theme-transition,
+html.theme-transition * {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.2s ease !important;
+}
+
+/* Children of .stagger rise in one after another. */
+.stagger > * {
+  animation: var(--animate-rise);
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+.stagger > *:nth-child(n + 6) {
+  animation-delay: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

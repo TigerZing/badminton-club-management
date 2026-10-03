@@ -1,8 +1,9 @@
 import type { common as enCommon, nav as enNav, status as enStatus } from "../en/common";
 
 export const common: typeof enCommon = {
-  appName: "CLB Cầu lông",
-  appDescription: "Lịch chơi hằng tuần, sân trống và chia cặp đánh đôi cân bằng cho CLB.",
+  appName: "Sakai Badminton",
+  appDescription: "Lịch chơi hằng tuần, sân trống và chia cặp đánh đôi cân bằng cho CLB Sakai Badminton.",
+  tagline: "Chơi nhiều hơn, chờ ít hơn.",
   save: "Lưu",
   saving: "Đang lưu…",
   cancel: "Hủy",
@@ -12,6 +13,8 @@ export const common: typeof enCommon = {
   show: "Xem",
   optional: "không bắt buộc",
   language: "Ngôn ngữ",
+  darkMode: "Chuyển sang giao diện tối",
+  lightMode: "Chuyển sang giao diện sáng",
   somethingWentWrong: "Đã có lỗi xảy ra",
   tryAgain: "Thử lại",
   errorHint: "Không tải được trang. Hãy thử lại, nếu vẫn lỗi hãy báo quản trị viên.",

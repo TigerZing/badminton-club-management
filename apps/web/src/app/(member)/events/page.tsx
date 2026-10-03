@@ -27,16 +27,16 @@ export default async function EventsPage() {
     <>
       <PageHeader title={t("events.upcoming")} description={t("events.greeting", { name: user.name.split(" ")[0] })} />
       {events.length === 0 && <EmptyState>{t("events.empty")}</EmptyState>}
-      <div className="grid gap-3">
+      <div className="stagger grid gap-3">
         {events.map((e) => {
           const spotsLeft = Math.max(0, e.maxPlayers - e.confirmedCount);
           const chip = dateChip(e.startsAt, locale);
           return (
             <Link key={e.id} href={`/events/${e.id}`}>
-              <Card className="flex items-center gap-3 transition-colors hover:bg-muted/50">
-                <div className="flex w-14 shrink-0 flex-col items-center rounded-lg bg-secondary py-2 text-secondary-foreground">
-                  <span className="text-xs uppercase">{chip.weekday}</span>
-                  <span className="text-lg font-semibold leading-none">{chip.day}</span>
+              <Card interactive className="flex items-center gap-3">
+                <div className="flex w-14 shrink-0 flex-col items-center rounded-xl bg-gradient-to-br from-primary to-emerald-700 py-2 text-primary-foreground shadow-sm shadow-primary/25 dark:to-emerald-500">
+                  <span className="text-[11px] font-medium uppercase opacity-90">{chip.weekday}</span>
+                  <span className="text-xl font-bold leading-tight">{chip.day}</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">

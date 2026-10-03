@@ -1,6 +1,7 @@
 export const common = {
-  appName: "Badminton Club",
-  appDescription: "Weekly sessions, court availability and balanced doubles for our club.",
+  appName: "Sakai Badminton",
+  appDescription: "Weekly sessions, court availability and balanced doubles for Sakai Badminton.",
+  tagline: "Play more, wait less.",
   save: "Save",
   saving: "Saving…",
   cancel: "Cancel",
@@ -10,6 +11,8 @@ export const common = {
   show: "Show",
   optional: "optional",
   language: "Language",
+  darkMode: "Switch to dark mode",
+  lightMode: "Switch to light mode",
   somethingWentWrong: "Something went wrong",
   tryAgain: "Try again",
   errorHint: "The page could not load. Try again, and if it keeps happening tell an admin.",

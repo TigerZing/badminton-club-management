@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { VenueForm } from "@/components/venue-form";
-import { VenueInfo } from "@/components/venue-info";
+import { VenueAbout, VenueActions } from "@/components/venue-info";
 import { getT } from "@/lib/i18n/server";
 import { clubToday, formatDateTime, formatDay, formatTimeRange } from "@/lib/time";
 import {
@@ -32,7 +32,7 @@ export default async function VenuePage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const [{ t, locale }, venue] = await Promise.all([getT(), getVenue(id)]);
   if (!venue) notFound();
-  const hasInfo = venue.phone || venue.website || venue.description || venue.bookingInfo;
+  const hasInfo = venue.phone || venue.website || venue.description || venue.bookingInfo || venue.bookingUrl || venue.mapUrl;
 
   return (
     <div className="grid gap-5">
@@ -42,10 +42,10 @@ export default async function VenuePage({ params }: { params: Promise<{ id: stri
         <CardTitle>{t("adminVenues.info")}</CardTitle>
         <Card className="grid gap-3">
           {hasInfo ? (
-            <VenueInfo
-              venue={venue}
-              labels={{ phone: t("adminVenues.phone"), website: t("adminVenues.website"), howToBook: t("adminVenues.howToBook") }}
-            />
+            <>
+              <VenueActions venue={venue} />
+              <VenueAbout venue={venue} />
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">{t("adminVenues.noInfo")}</p>
           )}

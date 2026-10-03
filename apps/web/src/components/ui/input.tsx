@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const field =
-  "flex w-full rounded-lg border border-border bg-card px-3 text-base sm:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+  "flex w-full rounded-lg border border-border bg-card px-3 text-base transition sm:text-sm placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 disabled:opacity-50";
 
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(field, "h-10", className)} {...props} />;

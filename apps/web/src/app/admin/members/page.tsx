@@ -36,10 +36,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         </Button>
       </form>
       {members.length === 0 && <EmptyState>{t("adminMembers.empty")}</EmptyState>}
-      <div className="grid gap-2">
+      <div className="stagger grid gap-2">
         {members.map((m) => (
           <Link key={m.id} href={`/admin/members/${m.id}`}>
-            <Card className={`flex items-center gap-3 p-3 hover:bg-muted/50 ${m.isActive ? "" : "opacity-60"}`}>
+            <Card interactive className={`flex items-center gap-3 p-3 ${m.isActive ? "" : "opacity-60"}`}>
               <SkillDot level={m.skillLevel} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
