@@ -53,6 +53,8 @@ export const errors = {
   roundNeedsMatch: "A round needs at least one match",
   venueNotFound: "Venue not found",
   lookupNotSetUp: "The info lookup is not set up yet. Add ANTHROPIC_API_KEY in the Vercel environment variables.",
+  lookupBadKey: "The Claude API key was rejected. Check ANTHROPIC_API_KEY in the Vercel environment variables.",
+  lookupNoCredit: "The Claude API account has no credit left. Add credit at platform.claude.com under Plans & Billing, then try again.",
   lookupFailed: "The lookup did not finish. Try again in a moment.",
   lookupNothingFound: "No reliable information was found for this venue. Add the address or a website and try again.",
 };

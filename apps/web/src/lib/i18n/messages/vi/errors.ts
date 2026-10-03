@@ -54,6 +54,8 @@ export const errors: typeof enErrors = {
   roundNeedsMatch: "Một lượt cần ít nhất một trận",
   venueNotFound: "Không tìm thấy địa điểm",
   lookupNotSetUp: "Chưa cấu hình tìm thông tin. Hãy thêm ANTHROPIC_API_KEY vào biến môi trường trên Vercel.",
+  lookupBadKey: "Claude API key không hợp lệ. Hãy kiểm tra ANTHROPIC_API_KEY trong biến môi trường trên Vercel.",
+  lookupNoCredit: "Tài khoản Claude API đã hết tiền. Hãy nạp thêm ở platform.claude.com, mục Plans & Billing, rồi thử lại.",
   lookupFailed: "Chưa tìm xong. Hãy thử lại sau ít phút.",
   lookupNothingFound: "Không tìm thấy thông tin đáng tin cậy cho địa điểm này. Hãy thêm địa chỉ hoặc website rồi thử lại.",
 };

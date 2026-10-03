@@ -50,15 +50,15 @@ function buildPrompt(
     venue.phone && `Phone: ${venue.phone}`,
   ].filter(Boolean);
 
-  return `A badminton club in Vietnam plays at this venue and wants its contact and booking details on file:
+  return `A badminton club plays at this venue and wants its contact and booking details on file. The venue may be in any country; use the address to tell.
 
 ${known.join("\n")}
 
-Search the web for this venue and open its most useful pages (official site, Facebook or Zalo page, Google Maps listing, court booking apps such as Alobo, local directories). Then report:
-- phone: the number people call or message on Zalo to book.
+Search the web for this venue, in the local language too, and open its most useful pages (official site, city or facility pages, Facebook or Zalo page, Google Maps listing, court booking apps or local reservation systems, local directories). Then report:
+- phone: the number people call or message to book.
 - website: the official website, or the Facebook page if there is no website.
 - description: 2-4 sentences covering what a player wants to know, such as the number of badminton courts, floor type, opening hours, typical price per hour, parking and amenities. Only include what the sources say.
-- bookingInfo: how to book a court, written as short steps or a short paragraph (for example call or Zalo the number, use a named app or website, deposit rules, how far ahead to book).
+- bookingInfo: how to book a court, written as short steps or a short paragraph (for example call or message the number, use a named app, website or city reservation system, whether registration or a membership card is needed, deposit rules, how far ahead to book).
 - sources: the URLs you took these facts from.
 
 Write description and bookingInfo in ${LANGUAGE[locale]}. Use null for anything you could not confirm, and do not guess phone numbers or URLs. If none of the results clearly match this venue at this address, set found to false.`;
@@ -86,7 +86,7 @@ export async function findVenueInfo(venueId: string, locale: Locale): Promise<Ve
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
           tools: [
-            { type: "web_search_20260209", name: "web_search", max_uses: 6, user_location: { type: "approximate", country: "VN" } },
+            { type: "web_search_20260209", name: "web_search", max_uses: 6 },
             { type: "web_fetch_20260209", name: "web_fetch", max_uses: 6 },
           ],
           output_config: { format: { type: "json_schema", schema: outputSchema } },
@@ -95,7 +95,7 @@ export async function findVenueInfo(venueId: string, locale: Locale): Promise<Ve
         .finalMessage();
     } catch (e) {
       console.error("Venue lookup request failed", e);
-      throw new UserError("errors.lookupFailed");
+      throw new UserError(accountProblem(e) ?? "errors.lookupFailed");
     }
 
     if (message.stop_reason === "pause_turn") {
@@ -117,6 +117,14 @@ export async function findVenueInfo(venueId: string, locale: Locale): Promise<Ve
     return parsed.data;
   }
   throw new UserError("errors.lookupFailed");
+}
+
+/** Problems with the Anthropic account that the admin can fix, rather than a failed search. */
+function accountProblem(e: unknown) {
+  if (!(e instanceof Anthropic.APIError)) return null;
+  if (e.status === 401 || e.status === 403) return "errors.lookupBadKey" as const;
+  if (e.status === 400 && /credit balance/i.test(e.message)) return "errors.lookupNoCredit" as const;
+  return null;
 }
 
 function safeJson(text: string): unknown {

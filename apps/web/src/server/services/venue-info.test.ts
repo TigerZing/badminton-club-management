@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const finalMessage = vi.fn();
 const stream = vi.fn(() => ({ finalMessage }));
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: class {
+vi.mock("@anthropic-ai/sdk", async (importActual) => {
+  const actual = await importActual<typeof import("@anthropic-ai/sdk")>();
+  class FakeAnthropic {
+    static APIError = actual.APIError;
     beta = { messages: { stream } };
-  },
-}));
+  }
+  return { ...actual, default: FakeAnthropic };
+});
 
 const venue = { id: "v1", name: "Nhà thi đấu Quận 1", address: "1 Lê Lợi", mapUrl: null, bookingUrl: null, website: null, phone: null };
 const update = vi.fn(async (args: { data: object }) => ({ ...venue, ...args.data }));
@@ -66,5 +69,16 @@ describe("lookupVenueInfo", () => {
   it("reports a refusal as a failed lookup", async () => {
     finalMessage.mockResolvedValueOnce({ stop_reason: "refusal", content: [] });
     await expect(lookupVenueInfo("v1", "en")).rejects.toMatchObject({ key: "errors.lookupFailed" });
+  });
+});
+
+describe("account problems", () => {
+  it("says when the API account has no credit", async () => {
+    process.env.ANTHROPIC_API_KEY = "test";
+    const { BadRequestError } = await vi.importActual<typeof import("@anthropic-ai/sdk")>("@anthropic-ai/sdk");
+    finalMessage.mockRejectedValueOnce(
+      new BadRequestError(400, { error: { message: "Your credit balance is too low" } }, "Your credit balance is too low to access the Anthropic API.", new Headers()),
+    );
+    await expect(lookupVenueInfo("v1", "vi")).rejects.toMatchObject({ key: "errors.lookupNoCredit" });
   });
 });
