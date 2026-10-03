@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { run, type ActionState } from "../action-result";
-import { profileSchema } from "../schemas";
+import { changePasswordSchema, profileSchema } from "../schemas";
 import { requireUser } from "../session";
-import { updateProfile } from "../services/members";
+import { changePassword, updateProfile } from "../services/members";
 import { cancelRegistration, registerForEvent } from "../services/registrations";
 
 export async function updateProfileAction(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -13,6 +13,15 @@ export async function updateProfileAction(_: ActionState, formData: FormData): P
     await updateProfile(user.id, profileSchema.parse(Object.fromEntries(formData)));
     revalidatePath("/me");
     return "Profile saved";
+  });
+}
+
+export async function changePasswordAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  return run(async () => {
+    const input = changePasswordSchema.parse(Object.fromEntries(formData));
+    await changePassword(user.id, input.currentPassword, input.newPassword);
+    return "Password changed";
   });
 }
 

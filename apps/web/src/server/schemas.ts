@@ -32,12 +32,28 @@ export const profileSchema = z.object({
   phone: optionalText,
 });
 
-export const updateMemberSchema = z.object({
-  userId: id,
+const password = z.string().min(8, "Password must be at least 8 characters").max(100);
+const memberFields = {
+  name: z.string().trim().min(2, "Enter a name").max(80),
+  email,
+  phone: optionalText,
   skillLevel: z.coerce.number().int().min(1, "Skill is 1 to 10").max(10, "Skill is 1 to 10"),
   role: z.enum(["MEMBER", "ADMIN"]),
-  isActive: z.coerce.boolean(),
-});
+};
+
+export const createMemberSchema = z.object({ ...memberFields, password });
+
+export const updateMemberSchema = z.object({ ...memberFields, userId: id, isActive: z.coerce.boolean() });
+
+export const resetPasswordSchema = z.object({ userId: id, password });
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password"),
+    newPassword: password,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, { message: "The new passwords do not match", path: ["confirmPassword"] });
 
 export const eventSchema = z
   .object({

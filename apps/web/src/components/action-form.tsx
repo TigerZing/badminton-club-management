@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { createContext, startTransition, useActionState, useContext, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import type { ActionState } from "@/server/action-result";
@@ -8,7 +8,13 @@ import { cn } from "@/lib/utils";
 
 type Action = (state: ActionState, formData: FormData) => Promise<ActionState>;
 
-/** A form bound to a Server Action that shows the action's error or success message. */
+const PendingContext = createContext(false);
+
+/**
+ * A form bound to a Server Action that shows the action's error or success message.
+ * Unlike a plain `<form action>`, it keeps what the user typed when the action fails,
+ * and clears the form only after a success.
+ */
 export function ActionForm({
   action,
   children,
@@ -18,10 +24,25 @@ export function ActionForm({
   children: React.ReactNode;
   className?: string;
 }) {
-  const [state, formAction] = useActionState(action, null);
+  const [state, formAction, pending] = useActionState(action, null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state?.ok) formRef.current?.reset();
+  }, [state]);
+
   return (
-    <form action={formAction} className={cn("grid gap-3", className)}>
-      {children}
+    <form
+      ref={formRef}
+      action={formAction}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => formAction(data));
+      }}
+      className={cn("grid gap-3", className)}
+    >
+      <PendingContext.Provider value={pending}>{children}</PendingContext.Provider>
       {state?.error && (
         <p role="alert" className="text-sm text-destructive">
           {state.error}
@@ -33,7 +54,8 @@ export function ActionForm({
 }
 
 export function SubmitButton({ children, pendingText, ...props }: ButtonProps & { pendingText?: string }) {
-  const { pending } = useFormStatus();
+  const formPending = useFormStatus().pending;
+  const pending = useContext(PendingContext) || formPending;
   return (
     <Button type="submit" disabled={pending || props.disabled} {...props}>
       {pending ? (pendingText ?? "Saving…") : children}

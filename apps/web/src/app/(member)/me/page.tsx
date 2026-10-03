@@ -3,7 +3,7 @@ import { History } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, PageHeader } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
-import { updateProfileAction } from "@/server/actions/account";
+import { changePasswordAction, updateProfileAction } from "@/server/actions/account";
 import { requireUser } from "@/server/session";
 
 export const metadata = { title: "My profile" };
@@ -38,6 +38,23 @@ export default async function MePage() {
               <Input id="phone" name="phone" type="tel" defaultValue={user.phone ?? ""} />
             </Field>
             <SubmitButton className="justify-self-start">Save</SubmitButton>
+          </ActionForm>
+        </Card>
+        <Card>
+          <h2 className="mb-3 font-semibold">Change password</h2>
+          <ActionForm action={changePasswordAction}>
+            <Field label="Current password" htmlFor="currentPassword">
+              <Input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
+            </Field>
+            <Field label="New password" htmlFor="newPassword" hint="At least 8 characters">
+              <Input id="newPassword" name="newPassword" type="password" autoComplete="new-password" minLength={8} required />
+            </Field>
+            <Field label="Repeat new password" htmlFor="confirmPassword">
+              <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required />
+            </Field>
+            <SubmitButton className="justify-self-start" variant="secondary">
+              Change password
+            </SubmitButton>
           </ActionForm>
         </Card>
       </div>

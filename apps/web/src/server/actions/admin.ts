@@ -4,7 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { run, type ActionState } from "../action-result";
 import { UserError } from "../errors";
-import { courtSchema, eventSchema, eventStatusSchema, scoreSchema, slotSchema, updateMemberSchema, venueSchema } from "../schemas";
+import {
+  courtSchema,
+  createMemberSchema,
+  eventSchema,
+  eventStatusSchema,
+  resetPasswordSchema,
+  scoreSchema,
+  slotSchema,
+  updateMemberSchema,
+  venueSchema,
+} from "../schemas";
 import { requireAdmin } from "../session";
 import { createEvent, setEventStatus, updateEvent } from "../services/events";
 import {
@@ -16,7 +26,7 @@ import {
   updateRoundMatches,
   type MatchEdit,
 } from "../services/matches";
-import { updateMember } from "../services/members";
+import { createMember, resetPassword, updateMember } from "../services/members";
 import {
   adminAddRegistration,
   adminConfirmRegistration,
@@ -30,12 +40,34 @@ const fields = (fd: FormData) => Object.fromEntries(fd);
 
 // Members
 
+export async function createMemberAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdmin();
+  let id = "";
+  const result = await run(async () => {
+    id = (await createMember(createMemberSchema.parse(fields(fd)))).id;
+    revalidatePath("/admin/members");
+  });
+  if (result?.ok) redirect(`/admin/members/${id}?created=1`);
+  return result;
+}
+
 export async function updateMemberAction(_: ActionState, fd: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
   return run(async () => {
-    await updateMember(admin.id, updateMemberSchema.parse(fields(fd)));
+    const input = updateMemberSchema.parse(fields(fd));
+    await updateMember(admin.id, input);
     revalidatePath("/admin/members");
+    revalidatePath(`/admin/members/${input.userId}`);
     return "Saved";
+  });
+}
+
+export async function resetPasswordAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdmin();
+  return run(async () => {
+    const input = resetPasswordSchema.parse(fields(fd));
+    await resetPassword(input.userId, input.password);
+    return "Password changed. Share the new password with the member.";
   });
 }
 
