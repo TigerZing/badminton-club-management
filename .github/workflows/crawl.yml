@@ -1,0 +1,43 @@
+name: Crawl court availability
+
+on:
+  schedule:
+    - cron: "0 */3 * * *" # every 3 hours
+  workflow_dispatch:
+    inputs:
+      venueId:
+        description: Only crawl this venue (optional)
+        required: false
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL }}
+      VENUE_ID: ${{ inputs.venueId }}
+    steps:
+      - id: cfg
+        run: echo "ok=$([ -n "$DATABASE_URL" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - if: steps.cfg.outputs.ok != 'true'
+        run: echo "::notice::DATABASE_URL secret is not set, skipping the crawl."
+      - if: steps.cfg.outputs.ok == 'true'
+        uses: actions/checkout@v4
+      - if: steps.cfg.outputs.ok == 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.cfg.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - if: steps.cfg.outputs.ok == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.cfg.outputs.ok == 'true'
+        run: pnpm --filter @club/crawler exec playwright install --with-deps chromium
+      - if: steps.cfg.outputs.ok == 'true'
+        run: pnpm crawl

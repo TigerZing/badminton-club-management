@@ -1,0 +1,17 @@
+{
+  "name": "badminton-club",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "pnpm --filter @club/web dev",
+    "build": "pnpm --filter @club/web build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "db:migrate": "pnpm --filter @club/db migrate:dev",
+    "db:deploy": "pnpm --filter @club/db migrate:deploy",
+    "db:seed": "pnpm --filter @club/db seed",
+    "crawl": "pnpm --filter @club/crawler crawl"
+  }
+}
