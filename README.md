@@ -34,14 +34,7 @@ Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`.
 2. Set **Root Directory** to `apps/web`. Leave the other build settings as they are; `apps/web/vercel.json` runs the database migrations and then the build.
 3. Before the first deploy, open the project's **Storage** tab, add **Neon** (Postgres), choose the Singapore region, and connect it to the project. This sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
 4. In **Settings → Environment Variables**, add `AUTH_SECRET` (generate one with `openssl rand -base64 32`).
-5. Deploy. Then create the first admin once, from your computer, using the production database URL:
-
-   ```bash
-   DATABASE_URL="<neon url>" DATABASE_URL_UNPOOLED="<neon url>" \
-   SEED_ADMIN_EMAIL="you@example.com" SEED_ADMIN_PASSWORD="<strong password>" \
-   pnpm db:seed
-   ```
-
+5. Add `ADMIN_EMAILS` with your email. Deploy, then sign up with that email: the account becomes an admin. (Alternatively, run `pnpm db:seed` with `SEED_ADMIN_*` against the production database.)
 6. Optional, for court crawling: add `DATABASE_URL` as a GitHub Actions secret so `.github/workflows/crawl.yml` can run, and set `GITHUB_TOKEN` (fine-grained, Actions: write) and `GITHUB_REPO` in Vercel so admins can press **Run crawl now**.
 7. Optional: add your domain under **Settings → Domains**.
 

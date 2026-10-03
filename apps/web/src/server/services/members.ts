@@ -6,8 +6,19 @@ export async function createMember(input: { name: string; email: string; passwor
   const exists = await prisma.user.findUnique({ where: { email: input.email } });
   if (exists) throw new UserError("An account with this email already exists");
   return prisma.user.create({
-    data: { name: input.name, email: input.email, passwordHash: await bcrypt.hash(input.password, 10) },
+    data: {
+      name: input.name,
+      email: input.email,
+      passwordHash: await bcrypt.hash(input.password, 10),
+      role: isBootstrapAdmin(input.email) ? "ADMIN" : "MEMBER",
+    },
   });
+}
+
+/** Emails listed in ADMIN_EMAILS become admins when they sign up, so a new deployment needs no seed step. */
+function isBootstrapAdmin(email: string) {
+  const admins = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase());
+  return admins.includes(email.toLowerCase());
 }
 
 export function updateProfile(userId: string, input: { name: string; phone?: string | null }) {
