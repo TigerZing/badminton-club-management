@@ -25,7 +25,7 @@ export async function createMember(input: {
 
 async function assertEmailFree(email: string, exceptUserId?: string) {
   const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists && exists.id !== exceptUserId) throw new UserError("An account with this email already exists");
+  if (exists && exists.id !== exceptUserId) throw new UserError("errors.emailTaken");
 }
 
 /** Emails listed in ADMIN_EMAILS become admins when they sign up, so a new deployment needs no seed step. */
@@ -61,15 +61,15 @@ export async function updateMember(
   },
 ) {
   const target = await prisma.user.findUnique({ where: { id: input.userId } });
-  if (!target) throw new UserError("Member not found");
+  if (!target) throw new UserError("errors.memberNotFound");
   await assertEmailFree(input.email, input.userId);
 
   const losesAdmin = target.role === "ADMIN" && (input.role !== "ADMIN" || !input.isActive);
   if (losesAdmin) {
     const admins = await prisma.user.count({ where: { role: "ADMIN", isActive: true } });
-    if (admins <= 1) throw new UserError("The club needs at least one active admin");
+    if (admins <= 1) throw new UserError("errors.needOneAdmin");
   }
-  if (input.userId === actorId && !input.isActive) throw new UserError("You cannot deactivate yourself");
+  if (input.userId === actorId && !input.isActive) throw new UserError("errors.cannotDeactivateSelf");
 
   return prisma.user.update({
     where: { id: input.userId },
@@ -102,7 +102,7 @@ export async function resetPassword(userId: string, newPassword: string) {
 export async function changePassword(userId: string, currentPassword: string, newPassword: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user?.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
-    throw new UserError("Your current password is not correct");
+    throw new UserError("errors.wrongCurrentPassword");
   }
   await prisma.user.update({ where: { id: userId }, data: { passwordHash: await bcrypt.hash(newPassword, 10) } });
 }

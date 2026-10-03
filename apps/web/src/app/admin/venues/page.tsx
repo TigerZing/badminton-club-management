@@ -2,34 +2,38 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { getT } from "@/lib/i18n/server";
 import { listVenues } from "@/server/services/venues";
 
-export const metadata = { title: "Venues" };
+export async function generateMetadata() {
+  const { t } = await getT();
+  return { title: t("adminVenues.title") };
+}
 
 export default async function VenuesPage() {
-  const venues = await listVenues({ activeOnly: false });
+  const [{ t }, venues] = await Promise.all([getT(), listVenues({ activeOnly: false })]);
   return (
     <>
       <PageHeader
-        title="Venues"
+        title={t("adminVenues.title")}
         action={
           <Link href="/admin/venues/new" className={buttonVariants({ size: "sm" })}>
-            Add venue
+            {t("adminVenues.add")}
           </Link>
         }
       />
-      {venues.length === 0 && <EmptyState>Add the halls where the club plays.</EmptyState>}
+      {venues.length === 0 && <EmptyState>{t("adminVenues.empty")}</EmptyState>}
       <div className="grid gap-2">
         {venues.map((v) => (
           <Link key={v.id} href={`/admin/venues/${v.id}`}>
             <Card className="flex items-center justify-between gap-2 hover:bg-muted/50">
               <div>
                 <p className="font-medium">{v.name}</p>
-                <p className="text-sm text-muted-foreground">{v._count.courts} courts</p>
+                <p className="text-sm text-muted-foreground">{t("adminVenues.courtCount", { count: v._count.courts })}</p>
               </div>
               <div className="flex gap-1">
-                {!v.isActive && <Badge variant="muted">Hidden</Badge>}
-                <Badge variant="muted">{v.crawlerKey ? `Crawler: ${v.crawlerKey}` : "Manual"}</Badge>
+                {!v.isActive && <Badge variant="muted">{t("adminVenues.hidden")}</Badge>}
+                <Badge variant="muted">{v.crawlerKey ? t("adminVenues.crawler", { key: v.crawlerKey }) : t("adminVenues.manual")}</Badge>
               </div>
             </Card>
           </Link>

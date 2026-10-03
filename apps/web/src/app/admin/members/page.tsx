@@ -5,33 +5,37 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SkillDot } from "@/components/event-bits";
+import { getT } from "@/lib/i18n/server";
 import { listMembers } from "@/server/services/members";
 
-export const metadata = { title: "Members" };
+export async function generateMetadata() {
+  const { t } = await getT();
+  return { title: t("adminMembers.title") };
+}
 
 export default async function MembersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
-  const members = await listMembers(q);
+  const [{ t }, members] = await Promise.all([getT(), listMembers(q)]);
   const active = members.filter((m) => m.isActive).length;
 
   return (
     <>
       <PageHeader
-        title="Members"
-        description={`${active} active · ${members.length - active} inactive`}
+        title={t("adminMembers.title")}
+        description={t("adminMembers.summary", { active, inactive: members.length - active })}
         action={
           <Link href="/admin/members/new" className={buttonVariants({ size: "sm" })}>
-            Add member
+            {t("adminMembers.add")}
           </Link>
         }
       />
       <form className="mb-4 flex gap-2">
-        <Input name="q" defaultValue={q} placeholder="Search name or email" aria-label="Search" />
+        <Input name="q" defaultValue={q} placeholder={t("adminMembers.searchPlaceholder")} aria-label={t("adminMembers.search")} />
         <Button type="submit" variant="secondary">
-          Search
+          {t("adminMembers.search")}
         </Button>
       </form>
-      {members.length === 0 && <EmptyState>No members found.</EmptyState>}
+      {members.length === 0 && <EmptyState>{t("adminMembers.empty")}</EmptyState>}
       <div className="grid gap-2">
         {members.map((m) => (
           <Link key={m.id} href={`/admin/members/${m.id}`}>
@@ -40,8 +44,8 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="font-medium">{m.name}</span>
-                  {m.role === "ADMIN" && <Badge>Admin</Badge>}
-                  {!m.isActive && <Badge variant="muted">Inactive</Badge>}
+                  {m.role === "ADMIN" && <Badge>{t("adminMembers.admin")}</Badge>}
+                  {!m.isActive && <Badge variant="muted">{t("adminMembers.inactive")}</Badge>}
                 </div>
                 <p className="truncate text-xs text-muted-foreground">
                   {m.email}

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma, type EventStatus } from "@club/db";
+import { prisma } from "@club/db";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardTitle, EmptyState } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { EventStatusBadge, SkillDot } from "@/components/event-bits";
+import { getT } from "@/lib/i18n/server";
 import { formatDateTime, formatDay, formatTimeRange } from "@/lib/time";
 import {
   adminAddRegistrationAction,
@@ -17,18 +18,9 @@ import {
 } from "@/server/actions/admin";
 import { allowedTransitions, getEventWithRegistrations } from "@/server/services/events";
 
-const STATUS_ACTION: Record<EventStatus, string> = {
-  DRAFT: "Back to draft",
-  OPEN: "Open registration",
-  CLOSED: "Close registration",
-  IN_PROGRESS: "Start session",
-  COMPLETED: "Mark completed",
-  CANCELLED: "Cancel event",
-};
-
 export default async function AdminEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const event = await getEventWithRegistrations(id);
+  const [{ t, locale }, event] = await Promise.all([getT(), getEventWithRegistrations(id)]);
   if (!event) notFound();
 
   const registeredIds = new Set(event.registrations.map((r) => r.userId));
@@ -49,22 +41,28 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
           <EventStatusBadge status={event.status} />
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {formatDay(event.startsAt)} · {formatTimeRange(event.startsAt, event.endsAt)}
-          {event.venue ? ` · ${event.venue.name}` : ""} · {event.courtCount} courts
+          {formatDay(event.startsAt, locale)} · {formatTimeRange(event.startsAt, event.endsAt)}
+          {event.venue ? ` · ${event.venue.name}` : ""} · {t("adminEvents.courtCount", { count: event.courtCount })}
         </p>
-        <p className="text-sm text-muted-foreground">Registration closes {formatDateTime(event.registrationDeadline)}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("adminEvents.closesAt", {
+            date: formatDateTime(event.registrationDeadline, locale),
+          })}
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href={`/admin/events/${event.id}/matches`} className={buttonVariants()}>
-            Match board
+            {t("adminEvents.matchBoard")}
           </Link>
           <Link href={`/admin/events/${event.id}/edit`} className={buttonVariants({ variant: "outline" })}>
-            Edit
+            {t("common.edit")}
           </Link>
           {allowedTransitions(event.status).map((s) => (
             <ActionForm key={s} action={setEventStatusAction}>
               <input type="hidden" name="eventId" value={event.id} />
               <input type="hidden" name="status" value={s} />
-              <SubmitButton variant={s === "CANCELLED" ? "destructive" : "secondary"}>{STATUS_ACTION[s]}</SubmitButton>
+              <SubmitButton variant={s === "CANCELLED" ? "destructive" : "secondary"}>
+                {t(`adminEvents.statusAction.${s}`)}
+              </SubmitButton>
             </ActionForm>
           ))}
         </div>
@@ -73,11 +71,14 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
       <section className="grid gap-2">
         <div className="flex items-baseline justify-between">
           <CardTitle>
-            Players {confirmed.length}/{event.maxPlayers}
+            {t("adminEvents.players", {
+              count: confirmed.length,
+              max: event.maxPlayers,
+            })}
           </CardTitle>
-          <span className="text-sm text-muted-foreground">{checkedIn} checked in</span>
+          <span className="text-sm text-muted-foreground">{t("adminEvents.checkedInCount", { count: checkedIn })}</span>
         </div>
-        {confirmed.length === 0 && <EmptyState>No confirmed players yet.</EmptyState>}
+        {confirmed.length === 0 && <EmptyState>{t("adminEvents.noConfirmed")}</EmptyState>}
         {confirmed.map((r) => (
           <Card key={r.id} className="flex items-center gap-2 p-2.5">
             <SkillDot level={r.user.skillLevel} />
@@ -87,14 +88,14 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
               <input type="hidden" name="registrationId" value={r.id} />
               <input type="hidden" name="checkedIn" value={r.checkedInAt ? "" : "1"} />
               <SubmitButton size="sm" variant={r.checkedInAt ? "default" : "outline"} pendingText="…">
-                {r.checkedInAt ? "Checked in" : "Check in"}
+                {r.checkedInAt ? t("adminEvents.checkedIn") : t("adminEvents.checkIn")}
               </SubmitButton>
             </ActionForm>
             <ActionForm action={adminRemoveRegistrationAction}>
               <input type="hidden" name="eventId" value={event.id} />
               <input type="hidden" name="registrationId" value={r.id} />
               <SubmitButton size="sm" variant="ghost" pendingText="…">
-                Remove
+                {t("adminEvents.remove")}
               </SubmitButton>
             </ActionForm>
           </Card>
@@ -103,7 +104,7 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
 
       {waitlist.length > 0 && (
         <section className="grid gap-2">
-          <CardTitle>Waitlist</CardTitle>
+          <CardTitle>{t("adminEvents.waitlist")}</CardTitle>
           {waitlist.map((r, i) => (
             <Card key={r.id} className="flex items-center gap-2 p-2.5">
               <Badge variant="warning">#{i + 1}</Badge>
@@ -112,14 +113,14 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
                 <input type="hidden" name="eventId" value={event.id} />
                 <input type="hidden" name="registrationId" value={r.id} />
                 <SubmitButton size="sm" variant="secondary" pendingText="…">
-                  Confirm
+                  {t("adminEvents.confirm")}
                 </SubmitButton>
               </ActionForm>
               <ActionForm action={adminRemoveRegistrationAction}>
                 <input type="hidden" name="eventId" value={event.id} />
                 <input type="hidden" name="registrationId" value={r.id} />
                 <SubmitButton size="sm" variant="ghost" pendingText="…">
-                  Remove
+                  {t("adminEvents.remove")}
                 </SubmitButton>
               </ActionForm>
             </Card>
@@ -128,12 +129,12 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
       )}
 
       <section>
-        <CardTitle className="mb-2">Add a member</CardTitle>
+        <CardTitle className="mb-2">{t("adminEvents.addMember")}</CardTitle>
         <ActionForm action={adminAddRegistrationAction} className="grid-cols-[1fr_auto]">
           <input type="hidden" name="eventId" value={event.id} />
-          <Select name="userId" defaultValue="" aria-label="Member">
+          <Select name="userId" defaultValue="" aria-label={t("adminEvents.member")}>
             <option value="" disabled>
-              Pick a member
+              {t("adminEvents.pickMember")}
             </option>
             {others.map((u) => (
               <option key={u.id} value={u.id}>
@@ -141,9 +142,9 @@ export default async function AdminEventPage({ params }: { params: Promise<{ id:
               </option>
             ))}
           </Select>
-          <SubmitButton variant="secondary">Add</SubmitButton>
+          <SubmitButton variant="secondary">{t("adminEvents.add")}</SubmitButton>
         </ActionForm>
-        <p className="mt-1 text-xs text-muted-foreground">Admins can add players after the deadline or above the limit.</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("adminEvents.addHint")}</p>
       </section>
     </div>
   );

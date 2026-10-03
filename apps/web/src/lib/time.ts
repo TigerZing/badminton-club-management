@@ -1,5 +1,7 @@
 // The club runs in Vietnam (UTC+7, no daylight saving). Dates are stored in UTC
 // and shown and entered in club time.
+import { intlLocale, type Locale } from "./i18n/config";
+
 export const CLUB_TIME_ZONE = "Asia/Ho_Chi_Minh";
 const CLUB_UTC_OFFSET = "+07:00";
 
@@ -39,14 +41,19 @@ export function clubDayRange(date: string): { start: Date; end: Date } {
   return { start, end: new Date(start.getTime() + 24 * 3600_000) };
 }
 
-const fmt = (options: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone: CLUB_TIME_ZONE, ...options });
+const formatters = new Map<string, Intl.DateTimeFormat>();
+function fmt(locale: Locale, options: Intl.DateTimeFormatOptions) {
+  const key = `${locale}:${JSON.stringify(options)}`;
+  let f = formatters.get(key);
+  if (!f) formatters.set(key, (f = new Intl.DateTimeFormat(intlLocale[locale], { timeZone: CLUB_TIME_ZONE, ...options })));
+  return f;
+}
 
-const dayFmt = fmt({ weekday: "short", day: "numeric", month: "short" });
-const timeFmt = fmt({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-const dateTimeFmt = fmt({ weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const DAY: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short" };
+const TIME: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
 
-export const formatDay = (d: Date) => dayFmt.format(d);
-export const formatTime = (d: Date) => timeFmt.format(d);
-export const formatDateTime = (d: Date) => dateTimeFmt.format(d);
+// Dates are shown in the reader's language; English is the default for callers without one.
+export const formatDay = (d: Date, locale: Locale = "en") => fmt(locale, DAY).format(d);
+export const formatTime = (d: Date) => fmt("en", TIME).format(d);
+export const formatDateTime = (d: Date, locale: Locale = "en") => fmt(locale, { ...DAY, ...TIME }).format(d);
 export const formatTimeRange = (a: Date, b: Date) => `${formatTime(a)}–${formatTime(b)}`;

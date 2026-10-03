@@ -1,19 +1,23 @@
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getT } from "@/lib/i18n/server";
 import { formatDay } from "@/lib/time";
 import { requireUser } from "@/server/session";
 import { getMatchHistory } from "@/server/services/matches";
 
-export const metadata = { title: "Match history" };
+export async function generateMetadata() {
+  const { t } = await getT();
+  return { title: t("me.matchHistory") };
+}
 
 export default async function HistoryPage() {
   const user = await requireUser();
-  const matches = await getMatchHistory(user.id);
+  const [{ t, locale }, matches] = await Promise.all([getT(), getMatchHistory(user.id)]);
 
   return (
     <>
-      <PageHeader title="Match history" description={`${matches.length} matches`} />
-      {matches.length === 0 && <EmptyState>Your matches will show up here after your first session.</EmptyState>}
+      <PageHeader title={t("me.matchHistory")} description={t("me.matchCount", { count: matches.length })} />
+      {matches.length === 0 && <EmptyState>{t("me.historyEmpty")}</EmptyState>}
       <ul className="grid gap-2">
         {matches.map((m) => {
           const myTeam = m.players.find((p) => p.userId === user.id)!.team;
@@ -25,7 +29,7 @@ export default async function HistoryPage() {
             <li key={m.id} className="rounded-lg border border-border bg-card p-3 text-sm">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
-                  {formatDay(m.round.event.startsAt)} · {m.round.event.title} · Round {m.round.number}
+                  {formatDay(m.round.event.startsAt, locale)} · {m.round.event.title} · {t("status.round", { number: m.round.number })}
                 </span>
                 {scored && (
                   <Badge variant={mine! > theirs! ? "success" : mine! < theirs! ? "destructive" : "muted"}>
@@ -34,7 +38,7 @@ export default async function HistoryPage() {
                 )}
               </div>
               <p className="mt-1">
-                With <span className="font-medium">{partner?.user.name ?? "?"}</span> vs{" "}
+                {t("me.with")} <span className="font-medium">{partner?.user.name ?? "?"}</span> {t("status.vs")}{" "}
                 {opponents.map((o) => o.user.name).join(" & ")}
               </p>
             </li>

@@ -36,7 +36,8 @@ Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`.
 4. In **Settings → Environment Variables**, add `AUTH_SECRET` (generate one with `openssl rand -base64 32`).
 5. Add `ADMIN_EMAILS` with your email. Deploy, then sign up with that email: the account becomes an admin. (Alternatively, run `pnpm db:seed` with `SEED_ADMIN_*` against the production database.)
 6. Optional, for court crawling: add `DATABASE_URL` as a GitHub Actions secret so `.github/workflows/crawl.yml` can run, and set `GITHUB_TOKEN` (fine-grained, Actions: write) and `GITHUB_REPO` in Vercel so admins can press **Run crawl now**.
-7. Optional: add your domain under **Settings → Domains**.
+7. Optional, for the **Find venue info** button on venue pages: add `ANTHROPIC_API_KEY` (a Claude API key from platform.claude.com). The lookup uses web search, so each press costs a few cents.
+8. Optional: add your domain under **Settings → Domains**.
 
 ## Matchmaking
 

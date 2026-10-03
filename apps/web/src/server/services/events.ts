@@ -20,7 +20,7 @@ function toEventData(input: EventInput) {
   const startsAt = fromClubTime(input.date, input.startTime);
   const endsAt = fromClubTime(input.date, input.endTime);
   const registrationDeadline = fromClubTime(input.deadlineDate, input.deadlineTime);
-  if (registrationDeadline > startsAt) throw new UserError("The registration deadline must be before the event starts");
+  if (registrationDeadline > startsAt) throw new UserError("errors.deadlineBeforeStart");
   return {
     title: input.title,
     venueId: input.venueId || null,
@@ -59,9 +59,9 @@ export function allowedTransitions(status: EventStatus) {
 
 export async function setEventStatus(eventId: string, status: EventStatus) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event) throw new UserError("Event not found");
+  if (!event) throw new UserError("errors.eventNotFound");
   if (!TRANSITIONS[event.status].includes(status)) {
-    throw new UserError(`Cannot change an event from ${event.status} to ${status}`);
+    throw new UserError("errors.cannotChangeStatus", { from: event.status, to: status });
   }
   await prisma.event.update({ where: { id: eventId }, data: { status } });
 }

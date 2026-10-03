@@ -31,17 +31,32 @@ export interface VenueInput {
   mapUrl?: string | null;
   bookingUrl?: string | null;
   crawlerKey?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  description?: string | null;
+  bookingInfo?: string | null;
   isActive: boolean;
 }
 
-export function saveVenue({ id, ...data }: VenueInput) {
-  const clean = { ...data, address: data.address ?? null, mapUrl: data.mapUrl ?? null, bookingUrl: data.bookingUrl ?? null, crawlerKey: data.crawlerKey ?? null };
+export function saveVenue({ id, name, isActive, ...optional }: VenueInput) {
+  const clean = {
+    name,
+    isActive,
+    address: optional.address ?? null,
+    mapUrl: optional.mapUrl ?? null,
+    bookingUrl: optional.bookingUrl ?? null,
+    crawlerKey: optional.crawlerKey ?? null,
+    phone: optional.phone ?? null,
+    website: optional.website ?? null,
+    description: optional.description ?? null,
+    bookingInfo: optional.bookingInfo ?? null,
+  };
   return id ? prisma.venue.update({ where: { id }, data: clean }) : prisma.venue.create({ data: clean });
 }
 
 export async function addCourt(venueId: string, name: string) {
   const exists = await prisma.court.findUnique({ where: { venueId_name: { venueId, name } } });
-  if (exists) throw new UserError("This venue already has a court with that name");
+  if (exists) throw new UserError("errors.courtNameTaken");
   await prisma.court.create({ data: { venueId, name } });
 }
 
@@ -58,7 +73,7 @@ export async function addManualSlot(input: {
   price?: number;
 }) {
   const court = await prisma.court.findUnique({ where: { id: input.courtId } });
-  if (!court || court.venueId !== input.venueId) throw new UserError("Pick a court at this venue");
+  if (!court || court.venueId !== input.venueId) throw new UserError("errors.pickCourtAtVenue");
   const startsAt = fromClubTime(input.date, input.startTime);
   const endsAt = fromClubTime(input.date, input.endTime);
   const data = { courtId: court.id, endsAt, price: input.price ?? null, status: "AVAILABLE" as const, source: "MANUAL" as const, fetchedAt: new Date() };
@@ -97,11 +112,11 @@ export async function getAvailability(date: string, venueId?: string) {
 export async function triggerCrawl(venueId?: string) {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
-  if (!token || !repo) throw new UserError("Crawling from the app is not set up yet (GITHUB_TOKEN and GITHUB_REPO).");
+  if (!token || !repo) throw new UserError("errors.crawlNotSetUp");
   const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/crawl.yml/dispatches`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
     body: JSON.stringify({ ref: "main", inputs: venueId ? { venueId } : {} }),
   });
-  if (!res.ok) throw new UserError(`GitHub refused to start the crawl (${res.status})`);
+  if (!res.ok) throw new UserError("errors.crawlRefused", { status: res.status });
 }

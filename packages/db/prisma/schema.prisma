@@ -88,6 +88,13 @@ model Venue {
   bookingUrl String?
   crawlerKey String?
   isActive   Boolean     @default(true)
+  // Contact and booking info, filled by the admin or by the info lookup.
+  phone         String?
+  website       String?
+  description   String?
+  bookingInfo   String?
+  infoSources   String[]  @default([])
+  infoUpdatedAt DateTime?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   courts     Court[]

@@ -1,15 +1,19 @@
 import { Card, PageHeader } from "@/components/ui/card";
 import { EventForm } from "@/components/event-form";
+import { getT } from "@/lib/i18n/server";
 import { createEventAction } from "@/server/actions/admin";
 import { listVenues } from "@/server/services/venues";
 
-export const metadata = { title: "New event" };
+export async function generateMetadata() {
+  const { t } = await getT();
+  return { title: t("adminEvents.newEvent") };
+}
 
 export default async function NewEventPage() {
-  const venues = await listVenues({ activeOnly: true });
+  const [{ t }, venues] = await Promise.all([getT(), listVenues({ activeOnly: true })]);
   return (
     <>
-      <PageHeader title="New event" description="It starts as a draft. Open registration when it is ready." />
+      <PageHeader title={t("adminEvents.newEvent")} description={t("adminEvents.newDescription")} />
       <Card>
         <EventForm action={createEventAction} venues={venues} />
       </Card>

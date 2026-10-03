@@ -7,6 +7,8 @@ import { Card, CardTitle, EmptyState } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { SkillDot } from "@/components/event-bits";
 import { MatchCard, RoundHeader } from "@/components/round-view";
+import { getT } from "@/lib/i18n/server";
+import type { TFunction } from "@/lib/i18n/translate";
 import {
   completeRoundAction,
   deleteDraftRoundAction,
@@ -17,7 +19,10 @@ import {
 } from "@/server/actions/admin";
 import { getCheckedInPlayers, listRounds, type RoundWithMatches } from "@/server/services/matches";
 
-export const metadata = { title: "Match board" };
+export async function generateMetadata() {
+  const { t } = await getT();
+  return { title: t("adminEvents.matchBoard") };
+}
 
 type CheckedIn = Awaited<ReturnType<typeof getCheckedInPlayers>>;
 
@@ -25,7 +30,7 @@ export default async function MatchBoardPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const event = await prisma.event.findUnique({ where: { id } });
   if (!event) notFound();
-  const [players, rounds] = await Promise.all([getCheckedInPlayers(id), listRounds(id, { includeDrafts: true })]);
+  const [{ t }, players, rounds] = await Promise.all([getT(), getCheckedInPlayers(id), listRounds(id, { includeDrafts: true })]);
   const open = rounds.find((r) => r.status !== "DONE");
   const done = rounds.filter((r) => r.status === "DONE");
 
@@ -35,37 +40,44 @@ export default async function MatchBoardPage({ params }: { params: Promise<{ id:
         <Link href={`/admin/events/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground">
           <ArrowLeft className="size-4" /> {event.title}
         </Link>
-        <h1 className="mt-1 text-xl font-semibold">Match board</h1>
+        <h1 className="mt-1 text-xl font-semibold">{t("adminEvents.matchBoard")}</h1>
       </div>
 
       {!open && (
         <Card>
-          <CardTitle>Next round: round {(rounds[0]?.number ?? 0) + 1}</CardTitle>
-          <p className="mb-3 text-sm text-muted-foreground">
-            {players.length} players checked in. Fewest games and longest wait play first, balanced by skill, avoiding repeat
-            partners and opponents.
-          </p>
+          <CardTitle>
+            {t("adminEvents.nextRound", {
+              number: (rounds[0]?.number ?? 0) + 1,
+            })}
+          </CardTitle>
+          <p className="mb-3 text-sm text-muted-foreground">{t("adminEvents.generateHint", { count: players.length })}</p>
           <ActionForm action={generateRoundAction} className="grid-cols-[6rem_1fr] items-end">
             <input type="hidden" name="eventId" value={id} />
             <label className="grid gap-1 text-xs text-muted-foreground">
-              Courts
+              {t("adminEvents.courts")}
               <Input name="courts" type="number" min={1} defaultValue={event.courtCount} />
             </label>
-            <SubmitButton pendingText="Generating…" disabled={players.length < 4}>
-              Generate round
+            <SubmitButton pendingText={t("adminEvents.generating")} disabled={players.length < 4}>
+              {t("adminEvents.generateRound")}
             </SubmitButton>
           </ActionForm>
         </Card>
       )}
 
-      {open?.status === "DRAFT" && <DraftRound key={open.id} round={open} players={players} courtCount={event.courtCount} eventId={id} />}
-      {open?.status === "PUBLISHED" && <LiveRound round={open} eventId={id} />}
+      {open?.status === "DRAFT" && (
+        <DraftRound key={open.id} round={open} players={players} courtCount={event.courtCount} eventId={id} t={t} />
+      )}
+      {open?.status === "PUBLISHED" && <LiveRound round={open} eventId={id} t={t} />}
 
       <section>
-        <CardTitle className="mb-2">Checked-in players ({players.length})</CardTitle>
+        <CardTitle className="mb-2">{t("adminEvents.checkedInPlayers", { count: players.length })}</CardTitle>
         {players.length === 0 ? (
           <EmptyState>
-            Check players in from the <Link href={`/admin/events/${id}`} className="underline">event page</Link>.
+            {t("adminEvents.checkInFrom")}{" "}
+            <Link href={`/admin/events/${id}`} className="underline">
+              {t("adminEvents.eventPage")}
+            </Link>
+            .
           </EmptyState>
         ) : (
           <ul className="grid grid-cols-2 gap-1 text-sm">
@@ -75,7 +87,7 @@ export default async function MatchBoardPage({ params }: { params: Promise<{ id:
                 <li key={p.id} className="flex items-center gap-2 rounded px-2 py-1 odd:bg-muted/50">
                   <SkillDot level={p.skillLevel} />
                   <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                  <span className="text-xs text-muted-foreground">{p.gamesPlayed} games</span>
+                  <span className="text-xs text-muted-foreground">{t("adminEvents.gamesCount", { count: p.gamesPlayed })}</span>
                 </li>
               ))}
           </ul>
@@ -101,11 +113,13 @@ function DraftRound({
   players,
   courtCount,
   eventId,
+  t,
 }: {
   round: RoundWithMatches;
   players: CheckedIn;
   courtCount: number;
   eventId: string;
+  t: TFunction;
 }) {
   const courts = Array.from(
     new Set([...round.matches.map((m) => m.courtNumber), ...Array.from({ length: courtCount }, (_, i) => i + 1)]),
@@ -118,51 +132,61 @@ function DraftRound({
   return (
     <Card className="border-primary">
       <RoundHeader round={round} />
-      <p className="mb-3 text-sm text-muted-foreground">
-        Review the proposal. Change any player, then save. Clear all four on a court to leave it empty.
-      </p>
+      <p className="mb-3 text-sm text-muted-foreground">{t("adminEvents.reviewHint")}</p>
       <ActionForm action={updateRoundMatchesAction}>
         <input type="hidden" name="eventId" value={eventId} />
         <input type="hidden" name="roundId" value={round.id} />
         <input type="hidden" name="courts" value={courts.join(",")} />
         {courts.map((court) => (
           <fieldset key={court} className="rounded-lg border border-border p-3">
-            <legend className="px-1 text-sm font-medium">Court {court}</legend>
+            <legend className="px-1 text-sm font-medium">{t("status.court", { number: court })}</legend>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
               <div className="grid gap-1.5">
                 {[0, 1].map((i) => (
-                  <PlayerSelect key={i} name={`court_${court}_a${i + 1}`} value={slot(court, "A", i)} players={players} />
+                  <PlayerSelect
+                    key={i}
+                    name={`court_${court}_a${i + 1}`}
+                    value={slot(court, "A", i)}
+                    players={players}
+                    label={t("adminEvents.player")}
+                  />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">vs</span>
+              <span className="text-xs text-muted-foreground">{t("status.vs")}</span>
               <div className="grid gap-1.5">
                 {[0, 1].map((i) => (
-                  <PlayerSelect key={i} name={`court_${court}_b${i + 1}`} value={slot(court, "B", i)} players={players} />
+                  <PlayerSelect
+                    key={i}
+                    name={`court_${court}_b${i + 1}`}
+                    value={slot(court, "B", i)}
+                    players={players}
+                    label={t("adminEvents.player")}
+                  />
                 ))}
               </div>
             </div>
           </fieldset>
         ))}
         <SubmitButton variant="secondary" className="justify-self-start">
-          Save changes
+          {t("adminEvents.saveChanges")}
         </SubmitButton>
       </ActionForm>
       {sittingOut.length > 0 && (
         <p className="mt-3 text-sm text-muted-foreground">
-          Sitting out: <span className="text-foreground">{sittingOut.map((p) => p.name).join(", ")}</span>
+          {t("adminEvents.sittingOut")} <span className="text-foreground">{sittingOut.map((p) => p.name).join(", ")}</span>
         </p>
       )}
       <div className="mt-4 flex flex-wrap gap-2">
         <ActionForm action={publishRoundAction}>
           <input type="hidden" name="eventId" value={eventId} />
           <input type="hidden" name="roundId" value={round.id} />
-          <SubmitButton pendingText="Publishing…">Publish to members</SubmitButton>
+          <SubmitButton pendingText={t("adminEvents.publishing")}>{t("adminEvents.publish")}</SubmitButton>
         </ActionForm>
         <ActionForm action={deleteDraftRoundAction}>
           <input type="hidden" name="eventId" value={eventId} />
           <input type="hidden" name="roundId" value={round.id} />
-          <SubmitButton variant="outline" pendingText="Deleting…">
-            Discard and regenerate
+          <SubmitButton variant="outline" pendingText={t("adminEvents.deleting")}>
+            {t("adminEvents.discard")}
           </SubmitButton>
         </ActionForm>
       </div>
@@ -170,9 +194,9 @@ function DraftRound({
   );
 }
 
-function PlayerSelect({ name, value, players }: { name: string; value: string; players: CheckedIn }) {
+function PlayerSelect({ name, value, players, label }: { name: string; value: string; players: CheckedIn; label: string }) {
   return (
-    <Select name={name} defaultValue={value} aria-label="Player" className="h-9 text-sm">
+    <Select name={name} defaultValue={value} aria-label={label} className="h-9 text-sm">
       <option value="">—</option>
       {players.map((p) => (
         <option key={p.id} value={p.id}>
@@ -183,7 +207,7 @@ function PlayerSelect({ name, value, players }: { name: string; value: string; p
   );
 }
 
-function LiveRound({ round, eventId }: { round: RoundWithMatches; eventId: string }) {
+function LiveRound({ round, eventId, t }: { round: RoundWithMatches; eventId: string; t: TFunction }) {
   return (
     <Card className="border-primary">
       <RoundHeader round={round} />
@@ -194,10 +218,26 @@ function LiveRound({ round, eventId }: { round: RoundWithMatches; eventId: strin
             <ActionForm action={recordScoreAction} className="grid-cols-[1fr_1fr_auto] items-end">
               <input type="hidden" name="eventId" value={eventId} />
               <input type="hidden" name="matchId" value={m.id} />
-              <Input name="scoreA" type="number" min={0} max={99} defaultValue={m.scoreA ?? ""} placeholder="Left" aria-label="Left team score" />
-              <Input name="scoreB" type="number" min={0} max={99} defaultValue={m.scoreB ?? ""} placeholder="Right" aria-label="Right team score" />
+              <Input
+                name="scoreA"
+                type="number"
+                min={0}
+                max={99}
+                defaultValue={m.scoreA ?? ""}
+                placeholder={t("adminEvents.left")}
+                aria-label={t("adminEvents.leftScore")}
+              />
+              <Input
+                name="scoreB"
+                type="number"
+                min={0}
+                max={99}
+                defaultValue={m.scoreB ?? ""}
+                placeholder={t("adminEvents.right")}
+                aria-label={t("adminEvents.rightScore")}
+              />
               <SubmitButton size="default" variant="outline" pendingText="…">
-                Save score
+                {t("adminEvents.saveScore")}
               </SubmitButton>
             </ActionForm>
           </div>
@@ -206,8 +246,8 @@ function LiveRound({ round, eventId }: { round: RoundWithMatches; eventId: strin
       <ActionForm action={completeRoundAction} className="mt-4">
         <input type="hidden" name="eventId" value={eventId} />
         <input type="hidden" name="roundId" value={round.id} />
-        <SubmitButton pendingText="Finishing…" className="justify-self-start">
-          Finish round
+        <SubmitButton pendingText={t("adminEvents.finishing")} className="justify-self-start">
+          {t("adminEvents.finishRound")}
         </SubmitButton>
       </ActionForm>
     </Card>

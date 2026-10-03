@@ -3,57 +3,62 @@ import { History } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Card, PageHeader } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
+import { getT } from "@/lib/i18n/server";
 import { changePasswordAction, updateProfileAction } from "@/server/actions/account";
 import { requireUser } from "@/server/session";
 
-export const metadata = { title: "My profile" };
+export async function generateMetadata() {
+  const { t } = await getT();
+  return { title: t("me.title") };
+}
 
 export default async function MePage() {
   const user = await requireUser();
+  const { t } = await getT();
   return (
     <>
-      <PageHeader title="My profile" description={user.email} />
+      <PageHeader title={t("me.title")} description={user.email} />
       <div className="grid gap-4">
         <Card className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-2xl font-semibold">{user.skillLevel}</p>
-            <p className="text-xs text-muted-foreground">Skill level (set by admins)</p>
+            <p className="text-xs text-muted-foreground">{t("me.skillLevel")}</p>
           </div>
           <div>
-            <p className="text-2xl font-semibold">{user.role === "ADMIN" ? "Admin" : "Member"}</p>
-            <p className="text-xs text-muted-foreground">Role</p>
+            <p className="text-2xl font-semibold">{user.role === "ADMIN" ? t("status.admin") : t("status.member")}</p>
+            <p className="text-xs text-muted-foreground">{t("me.role")}</p>
           </div>
         </Card>
         <Link href="/me/history">
           <Card className="flex items-center gap-2 font-medium hover:bg-muted/50">
-            <History className="size-4" /> Match history
+            <History className="size-4" /> {t("me.matchHistory")}
           </Card>
         </Link>
         <Card>
           <ActionForm action={updateProfileAction}>
-            <Field label="Name" htmlFor="name">
+            <Field label={t("me.name")} htmlFor="name">
               <Input id="name" name="name" defaultValue={user.name} required />
             </Field>
-            <Field label="Phone" htmlFor="phone" hint="Optional, visible to admins only">
+            <Field label={t("me.phone")} htmlFor="phone" hint={t("me.phoneHint")}>
               <Input id="phone" name="phone" type="tel" defaultValue={user.phone ?? ""} />
             </Field>
-            <SubmitButton className="justify-self-start">Save</SubmitButton>
+            <SubmitButton className="justify-self-start">{t("common.save")}</SubmitButton>
           </ActionForm>
         </Card>
         <Card>
-          <h2 className="mb-3 font-semibold">Change password</h2>
+          <h2 className="mb-3 font-semibold">{t("me.changePassword")}</h2>
           <ActionForm action={changePasswordAction}>
-            <Field label="Current password" htmlFor="currentPassword">
+            <Field label={t("me.currentPassword")} htmlFor="currentPassword">
               <Input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
             </Field>
-            <Field label="New password" htmlFor="newPassword" hint="At least 8 characters">
+            <Field label={t("me.newPassword")} htmlFor="newPassword" hint={t("me.passwordHint")}>
               <Input id="newPassword" name="newPassword" type="password" autoComplete="new-password" minLength={8} required />
             </Field>
-            <Field label="Repeat new password" htmlFor="confirmPassword">
+            <Field label={t("me.repeatPassword")} htmlFor="confirmPassword">
               <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required />
             </Field>
             <SubmitButton className="justify-self-start" variant="secondary">
-              Change password
+              {t("me.changePassword")}
             </SubmitButton>
           </ActionForm>
         </Card>

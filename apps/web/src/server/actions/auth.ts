@@ -13,7 +13,7 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
     try {
       await signIn("credentials", { ...input, redirectTo: "/events" });
     } catch (e) {
-      if (e instanceof AuthError) throw new UserError("Wrong email or password");
+      if (e instanceof AuthError) throw new UserError("errors.wrongCredentials");
       throw e;
     }
   });

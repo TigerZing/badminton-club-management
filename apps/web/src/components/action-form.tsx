@@ -3,6 +3,7 @@
 import { createContext, startTransition, useActionState, useContext, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 import type { ActionState } from "@/server/action-result";
 import { cn } from "@/lib/utils";
 
@@ -56,9 +57,10 @@ export function ActionForm({
 export function SubmitButton({ children, pendingText, ...props }: ButtonProps & { pendingText?: string }) {
   const formPending = useFormStatus().pending;
   const pending = useContext(PendingContext) || formPending;
+  const t = useT();
   return (
     <Button type="submit" disabled={pending || props.disabled} {...props}>
-      {pending ? (pendingText ?? "Saving…") : children}
+      {pending ? (pendingText ?? t("common.saving")) : children}
     </Button>
   );
 }

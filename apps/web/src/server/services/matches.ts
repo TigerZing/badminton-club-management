@@ -80,17 +80,17 @@ async function buildHistory(eventId: string, startsAt: Date, playerIds: string[]
 
 async function assertNoOpenRound(eventId: string) {
   const open = await prisma.round.findFirst({ where: { eventId, status: { in: ["DRAFT", "PUBLISHED"] } } });
-  if (open) throw new UserError(`Round ${open.number} is still ${open.status.toLowerCase()}. Finish or delete it first.`);
+  if (open) throw new UserError("errors.roundStillOpen", { number: open.number });
 }
 
 export async function generateRoundForEvent(eventId: string, courts?: number) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event) throw new UserError("Event not found");
-  if (event.status === "COMPLETED" || event.status === "CANCELLED") throw new UserError("This event is over");
+  if (!event) throw new UserError("errors.eventNotFound");
+  if (event.status === "COMPLETED" || event.status === "CANCELLED") throw new UserError("errors.eventOver");
   await assertNoOpenRound(eventId);
 
   const checkedIn = await getCheckedInPlayers(eventId);
-  if (checkedIn.length < 4) throw new UserError("Check in at least 4 players first");
+  if (checkedIn.length < 4) throw new UserError("errors.needFourCheckedIn");
 
   const players: Player[] = checkedIn.map((p) => ({
     id: p.id,
@@ -139,15 +139,15 @@ export interface MatchEdit {
 /** Admin: replaces the players on a draft round. A court left fully empty is dropped. */
 export async function updateRoundMatches(roundId: string, edits: MatchEdit[]) {
   const round = await prisma.round.findUnique({ where: { id: roundId }, include: roundInclude });
-  if (!round) throw new UserError("Round not found");
-  if (round.status !== "DRAFT") throw new UserError("Only draft rounds can be edited");
+  if (!round) throw new UserError("errors.roundNotFound");
+  if (round.status !== "DRAFT") throw new UserError("errors.onlyDraftEdit");
 
   const ids = edits.flatMap((e) => [...e.teamA, ...e.teamB]);
-  if (new Set(ids).size !== ids.length) throw new UserError("A player can only be on one court per round");
+  if (new Set(ids).size !== ids.length) throw new UserError("errors.onePlayerOneCourt");
 
   const checkedIn = await getCheckedInPlayers(round.eventId);
   const byId = new Map(checkedIn.map((p) => [p.id, p]));
-  for (const id of ids) if (!byId.has(id)) throw new UserError("Every player must be checked in");
+  for (const id of ids) if (!byId.has(id)) throw new UserError("errors.playersMustBeCheckedIn");
 
   const key = (a: string[], b: string[]) => [a.sort().join(","), b.sort().join(",")].sort().join("|");
   const before = new Map(
@@ -182,19 +182,19 @@ export async function updateRoundMatches(roundId: string, edits: MatchEdit[]) {
 
 async function getRound(roundId: string) {
   const round = await prisma.round.findUnique({ where: { id: roundId } });
-  if (!round) throw new UserError("Round not found");
+  if (!round) throw new UserError("errors.roundNotFound");
   return round;
 }
 
 export async function publishRound(roundId: string) {
   const round = await getRound(roundId);
-  if (round.status !== "DRAFT") throw new UserError("Only draft rounds can be published");
+  if (round.status !== "DRAFT") throw new UserError("errors.onlyDraftPublish");
   await prisma.round.update({ where: { id: roundId }, data: { status: "PUBLISHED" } });
 }
 
 export async function completeRound(roundId: string) {
   const round = await getRound(roundId);
-  if (round.status !== "PUBLISHED") throw new UserError("Publish the round before finishing it");
+  if (round.status !== "PUBLISHED") throw new UserError("errors.publishBeforeFinish");
   await prisma.$transaction([
     prisma.match.updateMany({ where: { roundId, status: "SCHEDULED" }, data: { status: "DONE" } }),
     prisma.round.update({ where: { id: roundId }, data: { status: "DONE" } }),
@@ -203,14 +203,14 @@ export async function completeRound(roundId: string) {
 
 export async function deleteDraftRound(roundId: string) {
   const round = await getRound(roundId);
-  if (round.status !== "DRAFT") throw new UserError("Only draft rounds can be deleted");
+  if (round.status !== "DRAFT") throw new UserError("errors.onlyDraftDelete");
   await prisma.round.delete({ where: { id: roundId } });
 }
 
 export async function recordScore(matchId: string, scoreA: number, scoreB: number) {
   const match = await prisma.match.findUnique({ where: { id: matchId }, include: { round: true } });
-  if (!match) throw new UserError("Match not found");
-  if (match.round.status === "DRAFT") throw new UserError("Publish the round before entering scores");
+  if (!match) throw new UserError("errors.matchNotFound");
+  if (match.round.status === "DRAFT") throw new UserError("errors.publishBeforeScores");
   await prisma.match.update({ where: { id: matchId }, data: { scoreA, scoreB, status: "DONE" } });
 }
 

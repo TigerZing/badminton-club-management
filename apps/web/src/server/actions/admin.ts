@@ -33,6 +33,8 @@ import {
   adminRemoveRegistration,
   setCheckIn,
 } from "../services/registrations";
+import { getLocale } from "@/lib/i18n/server";
+import { lookupVenueInfo } from "../services/venue-info";
 import { addCourt, addManualSlot, deleteCourt, deleteSlot, saveVenue, triggerCrawl } from "../services/venues";
 
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "");
@@ -58,7 +60,7 @@ export async function updateMemberAction(_: ActionState, fd: FormData): Promise<
     await updateMember(admin.id, input);
     revalidatePath("/admin/members");
     revalidatePath(`/admin/members/${input.userId}`);
-    return "Saved";
+    return "done.saved";
   });
 }
 
@@ -67,7 +69,7 @@ export async function resetPasswordAction(_: ActionState, fd: FormData): Promise
   return run(async () => {
     const input = resetPasswordSchema.parse(fields(fd));
     await resetPassword(input.userId, input.password);
-    return "Password changed. Share the new password with the member.";
+    return "done.memberPasswordReset";
   });
 }
 
@@ -119,7 +121,7 @@ export async function adminAddRegistrationAction(_: ActionState, fd: FormData): 
   const eventId = str(fd, "eventId");
   return run(async () => {
     const userId = str(fd, "userId");
-    if (!userId) throw new UserError("Pick a member");
+    if (!userId) throw new UserError("errors.pickMember");
     await adminAddRegistration(eventId, userId);
     revalidateEvent(eventId);
   });
@@ -169,13 +171,13 @@ export async function updateRoundMatchesAction(_: ActionState, fd: FormData): Pr
     for (const court of courts) {
       const ids = ["a1", "a2", "b1", "b2"].map((k) => str(fd, `court_${court}_${k}`));
       if (ids.every((id) => !id)) continue;
-      if (ids.some((id) => !id)) throw new UserError(`Court ${court} needs four players, or clear it completely`);
+      if (ids.some((id) => !id)) throw new UserError("errors.courtNeedsFour", { court });
       edits.push({ court, teamA: [ids[0]!, ids[1]!], teamB: [ids[2]!, ids[3]!] });
     }
-    if (!edits.length) throw new UserError("A round needs at least one match");
+    if (!edits.length) throw new UserError("errors.roundNeedsMatch");
     await updateRoundMatches(str(fd, "roundId"), edits);
     revalidateEvent(str(fd, "eventId"));
-    return "Matches saved";
+    return "done.matchesSaved";
   });
 }
 
@@ -219,9 +221,10 @@ export async function saveVenueAction(_: ActionState, fd: FormData): Promise<Act
     id = (await saveVenue(venueSchema.parse(fields(fd)))).id;
     revalidatePath("/admin/venues");
     revalidatePath("/courts");
+    return "done.venueSaved";
   });
   if (result?.ok && !str(fd, "id")) redirect(`/admin/venues/${id}`);
-  return result?.ok ? { ok: true, message: "Venue saved" } : result;
+  return result;
 }
 
 export async function addCourtAction(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -249,7 +252,7 @@ export async function addSlotAction(_: ActionState, fd: FormData): Promise<Actio
     await addManualSlot(input);
     revalidatePath(`/admin/venues/${input.venueId}`);
     revalidatePath("/courts");
-    return "Slot added";
+    return "done.slotAdded";
   });
 }
 
@@ -266,6 +269,17 @@ export async function triggerCrawlAction(_: ActionState, fd: FormData): Promise<
   await requireAdmin();
   return run(async () => {
     await triggerCrawl(str(fd, "venueId") || undefined);
-    return "Crawl started. Refresh in a minute or two.";
+    return "done.crawlStarted";
+  });
+}
+
+export async function lookupVenueInfoAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdmin();
+  return run(async () => {
+    const venueId = str(fd, "venueId");
+    await lookupVenueInfo(venueId, await getLocale());
+    revalidatePath(`/admin/venues/${venueId}`);
+    revalidatePath("/courts");
+    return "done.lookupDone";
   });
 }

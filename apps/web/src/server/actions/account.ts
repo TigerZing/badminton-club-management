@@ -12,7 +12,7 @@ export async function updateProfileAction(_: ActionState, formData: FormData): P
   return run(async () => {
     await updateProfile(user.id, profileSchema.parse(Object.fromEntries(formData)));
     revalidatePath("/me");
-    return "Profile saved";
+    return "done.profileSaved";
   });
 }
 
@@ -21,7 +21,7 @@ export async function changePasswordAction(_: ActionState, formData: FormData): 
   return run(async () => {
     const input = changePasswordSchema.parse(Object.fromEntries(formData));
     await changePassword(user.id, input.currentPassword, input.newPassword);
-    return "Password changed";
+    return "done.passwordChanged";
   });
 }
 
@@ -32,7 +32,7 @@ export async function registerForEventAction(_: ActionState, formData: FormData)
     const status = await registerForEvent(user.id, eventId);
     revalidatePath(`/events/${eventId}`);
     revalidatePath("/events");
-    return status === "CONFIRMED" ? "You're in!" : "The event is full, so you're on the waitlist.";
+    return status === "CONFIRMED" ? "done.registered" : "done.waitlisted";
   });
 }
 
@@ -43,6 +43,6 @@ export async function cancelRegistrationAction(_: ActionState, formData: FormDat
     await cancelRegistration(user.id, eventId);
     revalidatePath(`/events/${eventId}`);
     revalidatePath("/events");
-    return "Registration cancelled";
+    return "done.registrationCancelled";
   });
 }

@@ -11,7 +11,7 @@ export function isRegistrationOpen(event: Pick<Event, "status" | "registrationDe
 async function lockEvent(tx: Tx, eventId: string) {
   await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${eventId} FOR UPDATE`;
   const event = await tx.event.findUnique({ where: { id: eventId } });
-  if (!event) throw new UserError("Event not found");
+  if (!event) throw new UserError("errors.eventNotFound");
   return event;
 }
 
@@ -35,10 +35,10 @@ export async function fillFromWaitlist(tx: Tx, eventId: string) {
 export async function registerForEvent(userId: string, eventId: string): Promise<RegistrationStatus> {
   return prisma.$transaction(async (tx) => {
     const event = await lockEvent(tx, eventId);
-    if (!isRegistrationOpen(event)) throw new UserError("Registration is closed for this event");
+    if (!isRegistrationOpen(event)) throw new UserError("errors.registrationClosed");
 
     const existing = await tx.registration.findUnique({ where: { eventId_userId: { eventId, userId } } });
-    if (existing && existing.status !== "CANCELLED") throw new UserError("You are already registered");
+    if (existing && existing.status !== "CANCELLED") throw new UserError("errors.alreadyRegistered");
 
     const confirmed = await tx.registration.count({ where: { eventId, status: "CONFIRMED" } });
     const status: RegistrationStatus = confirmed < event.maxPlayers ? "CONFIRMED" : "WAITLISTED";
@@ -55,9 +55,9 @@ export async function registerForEvent(userId: string, eventId: string): Promise
 export async function cancelRegistration(userId: string, eventId: string) {
   await prisma.$transaction(async (tx) => {
     const event = await lockEvent(tx, eventId);
-    if (!isRegistrationOpen(event)) throw new UserError("The deadline has passed. Ask an admin to remove you.");
+    if (!isRegistrationOpen(event)) throw new UserError("errors.deadlinePassed");
     const reg = await tx.registration.findUnique({ where: { eventId_userId: { eventId, userId } } });
-    if (!reg || reg.status === "CANCELLED") throw new UserError("You are not registered");
+    if (!reg || reg.status === "CANCELLED") throw new UserError("errors.notRegistered");
     await tx.registration.update({ where: { id: reg.id }, data: { status: "CANCELLED", cancelledAt: new Date(), checkedInAt: null } });
     if (reg.status === "CONFIRMED") await fillFromWaitlist(tx, eventId);
   });
@@ -76,7 +76,7 @@ export async function adminAddRegistration(eventId: string, userId: string) {
 export async function adminRemoveRegistration(registrationId: string) {
   await prisma.$transaction(async (tx) => {
     const reg = await tx.registration.findUnique({ where: { id: registrationId } });
-    if (!reg) throw new UserError("Registration not found");
+    if (!reg) throw new UserError("errors.registrationNotFound");
     await tx.registration.update({
       where: { id: reg.id },
       data: { status: "CANCELLED", cancelledAt: new Date(), checkedInAt: null },
@@ -91,6 +91,6 @@ export async function adminConfirmRegistration(registrationId: string) {
 
 export async function setCheckIn(registrationId: string, checkedIn: boolean) {
   const reg = await prisma.registration.findUnique({ where: { id: registrationId } });
-  if (!reg || reg.status !== "CONFIRMED") throw new UserError("Only confirmed players can be checked in");
+  if (!reg || reg.status !== "CONFIRMED") throw new UserError("errors.onlyConfirmedCheckIn");
   await prisma.registration.update({ where: { id: registrationId }, data: { checkedInAt: checkedIn ? new Date() : null } });
 }
